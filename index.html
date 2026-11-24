@@ -23,6 +23,7 @@ header p{margin:2px 0 0;font-size:12.5px;color:#c9c9c9}
 .search input{width:100%;height:44px;border:1px solid #dbe0e8;border-radius:12px;padding:0 12px 0 38px;font-size:15px;background:#fff}
 .search svg{position:absolute;left:12px;top:13px;width:18px;height:18px;fill:none;stroke:#8a94a6;stroke-width:2}
 .note{font-size:12.5px;color:var(--muted);margin:0 2px 10px}
+textarea.f.fx{resize:vertical;min-height:76px;font-family:inherit;line-height:1.4}.opt{font-weight:400;color:var(--muted);font-size:12px}
 .prod{background:#fff;border:1px solid var(--line);border-radius:16px;margin-bottom:10px;overflow:hidden}
 .ph{display:flex;gap:12px;padding:12px;align-items:center;cursor:pointer}
 .ph img,.ph .noimg{width:76px;height:76px;border-radius:12px;object-fit:contain;background:#f4f5f7;flex:none;border:1px solid #eceef2}
@@ -156,13 +157,14 @@ function openCart(){
   var t=totals(),me=ME;
   var lines='<table class="otab"><tr><th>Product</th><th class="n">Qty</th><th class="n">Price</th><th class="n">Amount</th></tr>'+Object.keys(cart).map(function(k){var c=cart[k];return'<tr><td><b>'+esc(c.no)+' – '+esc(c.name)+'</b><small>'+esc(c.variant)+' · '+esc(boxLabel(c.packType))+'</small></td><td class="n">'+c.qty+'</td><td class="n">'+rs(c.rate)+'</td><td class="n"><b>'+rs(c.qty*c.rate)+'</b></td></tr>'}).join("")+'</table>';
   document.getElementById("cartIn").innerHTML='<h2>Your order</h2>'+lines+'<div class="tot"><span>Items total</span><b>'+rs(t.sub)+'</b><span>GST included ('+GST+'%)</span><b>'+rs(t.gst)+'</b><span class="g">Estimated total</span><b class="g">'+rs(t.total)+'</b></div><div class="hl">&#9888; <b>Packing charges and shipping cost</b> are not included here. They will be added in the final estimate we share with you.</div>'+
-  '<p class="req-note">All fields are required.</p>'+
+  '<p class="req-note">All fields marked * are required.</p>'+
   '<label>Customer name *</label><input class="f" id="fn" placeholder="Shop or person name" value="'+esc(me.name||"")+'" autocomplete="off">'+
   '<label>Mobile *</label><input class="f" id="fm" inputmode="numeric" maxlength="10" placeholder="10-digit mobile" value="'+esc(me.mobile||"")+'" autocomplete="off">'+
   '<label>Address *</label><input class="f" id="fa" autocomplete="off" placeholder="Shop, street" value="'+esc(me.address||"")+'">'+
   '<label>PIN code *</label><input class="f" id="fp" inputmode="numeric" maxlength="6" placeholder="6 digits" value="'+esc(me.pin||"")+'" autocomplete="off">'+
   '<p class="pinmsg" id="pinMsg">Type the PIN code. City and state fill in by themselves.</p>'+
   '<div class="two"><div><label>City *</label><input class="f" id="fc" value="'+esc(me.city||"")+'" autocomplete="off"></div><div><label>State *</label><input class="f" id="fst" value="'+esc(me.state||"Rajasthan")+'" autocomplete="off"></div></div>'+
+  '<label>Order note <span class="opt">(optional)</span></label><textarea class="f fx" id="fx" rows="3" maxlength="300" placeholder="For example: print our shop name on the box, extra gift wrap, deliver after 15th">'+esc(me.note||"")+'</textarea>'+
   '<div class="err" id="ferr"></div><div style="display:flex;gap:10px;margin-top:6px"><button class="btn light" style="flex:1" onclick="closeCart()">Add more</button><button class="btn" style="flex:1.4" id="sendB" onclick="send()">Send order request</button></div>';
   document.getElementById("cart").classList.add("on");lockBody(true);
   document.querySelectorAll("#cartIn .f").forEach(function(el){el.addEventListener("input",function(){el.classList.remove("bad");keepMe();var e=document.getElementById("ferr");if(e)e.textContent=""})});
@@ -227,9 +229,9 @@ function send(){
   google.script.run.withSuccessHandler(function(r){
     if(!r||!r.ok){b.disabled=false;b.textContent="Send order request";e.textContent=(r&&r.error)||"Could not send. Please try again.";return}
     cart={};save();closeCart();document.getElementById("bar").style.display="none";
-    document.getElementById("main").innerHTML='<div class="done"><div class="ok">✓</div><h2>Thank you, '+esc(me.name)+'!</h2><p>Your order request <b>'+esc(r.id)+'</b> has been sent.</p><p class="note">Estimated total '+rs(r.total)+' incl. GST. We will call you to confirm prices and delivery.</p>'+(CAT.phone?'<p><a class="btn" style="display:inline-flex;align-items:center;text-decoration:none" href="https://wa.me/'+esc(CAT.phone)+'?text='+encodeURIComponent("Hello, I sent order request "+r.id+".")+'">WhatsApp us</a></p>':"")+'<p><button class="btn light" onclick="location.reload()">Place another order</button></p></div>';
+    if(ME)ME.note="";document.getElementById("main").innerHTML='<div class="done"><div class="ok">✓</div><h2>Thank you, '+esc(me.name)+'!</h2><p>Your order request <b>'+esc(r.id)+'</b> has been sent.</p><p class="note">Estimated total '+rs(r.total)+' incl. GST. We will call you to confirm prices and delivery.</p>'+(CAT.phone?'<p><a class="btn" style="display:inline-flex;align-items:center;text-decoration:none" href="https://wa.me/'+esc(CAT.phone)+'?text='+encodeURIComponent("Hello, I sent order request "+r.id+".")+'">WhatsApp us</a></p>':"")+'<p><button class="btn light" onclick="location.reload()">Place another order</button></p></div>';
     window.scrollTo(0,0);
-  }).withFailureHandler(function(err){b.disabled=false;b.textContent="Send order request";e.textContent=(err&&err.message)||"Could not send. Please check your internet and try again."}).submitShopRequest({customer:me,note:"",items:items,stamp:CAT.stamp});
+  }).withFailureHandler(function(err){b.disabled=false;b.textContent="Send order request";e.textContent=(err&&err.message)||"Could not send. Please check your internet and try again."}).submitShopRequest({customer:me,note:(document.getElementById("fx")||{value:""}).value.trim().slice(0,300),items:items,stamp:CAT.stamp});
 }
 load();
 var catShown=false;
